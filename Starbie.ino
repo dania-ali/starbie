@@ -31,7 +31,6 @@ const int DHT_PIN = 3;           // XIAO D1: DHT11 data
 const int BUTTON_ONE_PIN = 4;    // XIAO D2: opens/confirms the radial menu
 const int BUTTON_TWO_PIN = 5;    // XIAO D3: shows/hides stats
 
-// Set this to false if your submission does not have a DHT11.
 const bool USE_DHT11 = true;
 
 // Most parts use these addresses. Only change them if an I2C scanner says
@@ -112,6 +111,8 @@ const uint32_t NAP_DURATION_MS = 48000;  // 48 seconds: four times the old nap.
 const uint16_t HEARTS_DURATION_MS = 1600;
 const uint16_t PLAY_LAP_MS = 800;
 const uint8_t PLAY_LAP_COUNT = 2;
+const uint32_t IDLE_BEFORE_STARGAZE_MS = 15000;
+const uint32_t STARGAZE_DURATION_MS = 10000;
 
 // Each byte stores eight pixels, left to right. This sparse outline keeps the
 // supplied creature readable on a tiny, one-bit OLED: head, eye, legs, tail,
@@ -119,37 +120,38 @@ const uint8_t PLAY_LAP_COUNT = 2;
 const uint8_t PROGMEM PET_SPRITE[] = {
   0x00, 0x00, 0x00, 0x00,
   0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00,
-  0x00, 0x70, 0x0a, 0x00,
-  0x00, 0xf8, 0x1f, 0x00,
-  0x00, 0x8c, 0x3f, 0x80,
-  0x00, 0x43, 0xff, 0x00,
-  0x00, 0x43, 0xff, 0x00,
-  0x00, 0x30, 0x7e, 0x00,
-  0x00, 0x98, 0x01, 0x00,
-  0x01, 0x98, 0x01, 0x80,
-  0x03, 0x00, 0x10, 0xc0,
-  0x03, 0x04, 0x00, 0xc0,
-  0x01, 0x8b, 0x01, 0x80,
-  0x01, 0xcb, 0x03, 0x80,
-  0x03, 0xc0, 0x03, 0xc0,
-  0x03, 0xc0, 0x03, 0xc0,
-  0x01, 0xc0, 0x03, 0x80,
+  0x00, 0x0f, 0xf0, 0x00,
+  0x00, 0x30, 0x0c, 0x00,
+  0x00, 0xc0, 0x03, 0x00,
+  0x01, 0x00, 0x00, 0x80,
+  0x02, 0x00, 0x00, 0x40,
+  0x04, 0x00, 0x00, 0x20,
+  0x08, 0x10, 0x20, 0x10,
+  0x10, 0x28, 0x50, 0x08,
+  0x10, 0x1c, 0x38, 0x08,
+  0x10, 0x1c, 0x38, 0x08,
+  0x38, 0x1c, 0x38, 0x1c,
+  0x44, 0x10, 0x20, 0x22,
+  0x82, 0x00, 0x00, 0x41,
+  0x83, 0x80, 0x01, 0xc1,
+  0x83, 0x82, 0x41, 0xc1,
+  0x82, 0x01, 0x80, 0x41,
+  0x44, 0x00, 0x00, 0x22,
+  0x38, 0x00, 0x00, 0x1c,
+  0x10, 0x00, 0x00, 0x08,
+  0x08, 0x00, 0x00, 0x10,
+  0x04, 0x00, 0x00, 0x20,
+  0x02, 0x00, 0x00, 0x40,
   0x01, 0x80, 0x01, 0x80,
-  0x00, 0x60, 0x06, 0x00,
-  0x00, 0x3f, 0xfc, 0x00,
-  0x00, 0x7f, 0xfe, 0x00,
-  0x00, 0x70, 0x0e, 0x00,
-  0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00,
-  0x00, 0x00, 0x00, 0x00,
+  0x03, 0xe0, 0x07, 0xc0,
+  0x0f, 0xf0, 0x0f, 0xf0,
+  0x1f, 0xff, 0xff, 0xf8,
+  0x1f, 0xfe, 0x7f, 0xf8,
+  0x1f, 0xfe, 0x7f, 0xf8,
+  0x0f, 0xfc, 0x3f, 0xf0,
+  0x07, 0xf8, 0x1f, 0xe0,
 };
+
 // ===========================================================================
 // You can read below without needing to understand every line. The rest of
 // the sketch handles buttons, sensors, drawing, and saving automatically.
@@ -199,6 +201,7 @@ View currentView = PET_VIEW;
 
 bool mpuFound = false;
 bool dhtFound = false;
+bool stargazing = false;
 float accelerationX = 0.0f;
 float accelerationY = 0.0f;
 float accelerationZ = STANDARD_GRAVITY;
@@ -217,7 +220,11 @@ uint32_t petJumpStartedAt = 0;
 uint32_t nappingUntil = 0;
 uint32_t heartAnimationEndsAt = 0;
 uint32_t playRunStartedAt = 0;
+uint32_t stargazeStartedAt = 0;
+uint32_t lastActivityAt = 0;
 int nappingPetX = 0;
+int stargazeX = 0;
+
 
 int petWalkingX(uint32_t now);
 
@@ -340,6 +347,33 @@ void updatePetTimers() {
   }
 }
 
+bool petIsBusy(uint32_t now){
+  return isNapping() || isPlaying() || petJumpStartedAt !=0 || now <heartAnimationEndsAt || now < shakeAnimationEndsAt;
+}
+
+// stargazing only happens when nothing else is happening
+void updateStargazing(){
+  const uint32_t now = millis();
+
+  //anything counts as activity
+  if(currentView != PET_VIEW || petIsBusy(now)){
+    stargazing = false;
+    lastActivityAt = now;
+    return;
+  }
+
+  if (stargazing) {
+    if (now - stargazeStartedAt >= STARGAZE_DURATION_MS){
+      stargazing = false;
+      lastActivityAt = now;
+    }
+  } else if (now - lastActivityAt >= IDLE_BEFORE_STARGAZE_MS){
+    stargazing = true;
+    stargazeStartedAt = now;
+    stargazeX = petWalkingX(now);
+  }
+}
+
 // While the menu is open, the MPU6050 acts like a tiny air mouse. The position
 // at the instant Button 1 opens the menu becomes the center for that menu use.
 void updateMenuBall() {
@@ -433,6 +467,8 @@ void chooseMenuItem() {
 
 void handleButtons() {
   if (wasPressed(buttonOne)) {
+    lastActivityAt = millis();
+    stargazing = false;
     if (currentView == MENU_VIEW) {
       chooseMenuItem();
     } else {
@@ -442,8 +478,22 @@ void handleButtons() {
 
   if (wasPressed(buttonTwo)) {
     // Button 2 never changes the pet. It only lets you peek at the values.
+    lastActivityAt = millis();
+    stargazing = false;
     currentView = currentView == STATS_VIEW ? PET_VIEW : STATS_VIEW;
   }
+}
+
+void drawSparkle(int x, int y) {
+  display.drawPixel(x, y - 2, SSD1306_WHITE);
+  display.drawPixel(x - 1, y - 1, SSD1306_WHITE);
+  display.drawPixel(x + 1, y - 1, SSD1306_WHITE);
+  display.drawPixel(x - 2, y, SSD1306_WHITE);
+  display.drawPixel(x, y, SSD1306_WHITE);
+  display.drawPixel(x + 2, y, SSD1306_WHITE);
+  display.drawPixel(x - 1, y + 1, SSD1306_WHITE);
+  display.drawPixel(x + 1, y + 1, SSD1306_WHITE);
+  display.drawPixel(x, y + 2, SSD1306_WHITE);
 }
 
 void drawHeart(int x, int y) {
@@ -479,11 +529,25 @@ void drawSleepZs(uint32_t now, int petX, int petY) {
   display.print("z");
 }
 
+void drawStargaze(uint32_t now, int petX){
+  const int starsX[] = {-12, 8, 24};
+  const int starsY[] = {10, 20, 8};
+  for(int i = 0; i <3; i++){
+    const int x = constrain(petX + starsX[i], 4, SCREEN_WIDTH - 5);
+    const int phase = (now/350 + i) % 3;
+    if (phase == 2){
+      display.drawPixel(x, starsY[i], SSD1306_WHITE);
+    } else {
+      drawSparkle(x, starsY[i]);
+    }
+  }
+}
+
 void drawPet() {
   display.clearDisplay();
 
   const uint32_t now = millis();
-  int petX = isNapping() ? nappingPetX : petWalkingX(now);
+  int petX = isNapping() ? nappingPetX : (stargazing ? stargazeX : petWalkingX(now));
   if (isPlaying()) {
     petX = playRunX(now);
   }
@@ -509,11 +573,22 @@ void drawPet() {
   }
 
   petX = constrain(petX, 0, SCREEN_WIDTH - PET_SPRITE_WIDTH);
+
+  if(stargazing){
+    petY -= 2;
+  }
   display.drawBitmap(petX, petY, PET_SPRITE, PET_SPRITE_WIDTH, PET_SPRITE_HEIGHT,
                      SSD1306_WHITE);
 
+  if (!isNapping() && !stargazing && (now / 250) % 2 == 0) {
+    drawSparkle(petX - 4, petY + 18);
+  }
+
   if (isNapping()) {
     drawSleepZs(now, petX, petY);
+  }
+  if (stargazing){
+    drawStargaze(now, petX);
   }
   drawHearts(now, petX, petY);
 }
@@ -636,6 +711,7 @@ void loop() {
   updateMpu();
   updateDht();
   updatePetTimers();
+  updateStargazing();
   handleButtons();
 
   if (currentView == MENU_VIEW) {
