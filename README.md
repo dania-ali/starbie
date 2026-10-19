@@ -35,9 +35,13 @@ Starbie sits on your desk and shows its personality through the sall display. It
 # Software
 Firmware/ contains one Arduino IDE sketch for the microcontroller. All settings are at the top. 
 
+# Case (CAD)
+Starbie lives in a custom star-shaped, two-part case designed in Onshape around the PCB (imported from KiCad as a STEP file). Files are in CAD/.
+
 # Repo contents
 - PCB/ - KiCad source files, schematic PDF, and fabrication exports (Starbie-gerbers.zip)
 - Firmware/ - Arduino IDE sketch (Starbie/Starbie.ino)
+- CAD/ - Case step files
 
 # Credits
 - Based on the Hack Club Half-Life Starbie guide
