@@ -1,7 +1,7 @@
 # Starbie
 A tiny motion controlled digital pet: a desktop tamagotchi that lives on a custom PCB. This version is a Kirby style pet that wanders a small OLED and reacted when ypu shake/tilt the board. It likes to stargaze when nothing is going on.
 
-Built for Hack Club's Half-Life by following the guide.
+Built for Hack Club's Half-Life
 <img width="893" height="683" alt="image" src="https://github.com/user-attachments/assets/e1341af4-e23a-4868-9d7b-78e07109b46e" />
 
 # What it is
