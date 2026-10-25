@@ -44,6 +44,6 @@ Starbie lives in a custom star-shaped, two-part case designed in Onshape around 
 - CAD/ - Case step files
 
 # Credits
-- Based on the Hack Club Half-Life Starbie guide
+- Hack Club Half-Life Starbie guide as starting point
 - Kirby is a character owned by Nintendo. This is a personal, non-commercial fan project.
 
