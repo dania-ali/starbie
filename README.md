@@ -3,6 +3,8 @@ A tiny motion controlled digital pet: a desktop tamagotchi that lives on a custo
 
 Built for Hack Club's Half-Life
 <img width="893" height="683" alt="image" src="https://github.com/user-attachments/assets/e1341af4-e23a-4868-9d7b-78e07109b46e" />
+<img width="906" height="691" alt="Screenshot 2026-10-18 220150" src="https://github.com/user-attachments/assets/86cd9271-6a6e-49e1-9acc-e6e89976a2ce" />
+
 
 # What it is
 Starbie sits on your desk and shows its personality through the sall display. It also reacts to how you handle it. You can interact with it by oving the board. The board has a microcontroller, display, motion sensor, and environmental sensor in its PCB design. 
